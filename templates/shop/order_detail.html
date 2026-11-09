@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}Заказ {{ order.number }} — FloraIS{% endblock %}
+{% block page_title %}Заказ {{ order.number }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Заказ {{ order.number }} <span class="badge badge--{{ order.status_css }}">{{ order.status_label }}</span></h1>
+        <p>Создан {{ order.created_at|date:"d.m.Y H:i" }} · {{ order.get_source_display }}</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_manager %}<a class="btn btn--outline" href="{% url 'manager_orders' %}">← Все заказы</a>{% else %}<a class="btn btn--outline" href="{% url 'my_orders' %}">← Мои заказы</a>{% endif %}
+        {% if order.can_cancel %}
+        <form method="post" action="{% url 'order_cancel' order.pk %}">
+            {% csrf_token %}
+            <button class="btn btn--rose" type="submit" data-confirm="Отменить заказ и вернуть остатки на склад?">Отменить заказ</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-title mb-2">Состав заказа</div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Товар</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
+                <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td><span class="strong">{{ item.product.image_emoji }} {{ item.product.name }}</span><div class="small muted">{{ item.product.sku }}</div></td>
+                    <td class="num">{{ item.price_at_moment|money }}</td>
+                    <td class="num">{{ item.quantity }}</td>
+                    <td class="num">{{ item.line_total|money }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot><tr><td colspan="3" class="text-right strong">Итого</td><td class="num strong">{{ order.total_amount|money }}</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="stack">
+        <div class="card">
+            <div class="card-title mb-2">Доставка и клиент</div>
+            <div class="summary-row"><span>Клиент</span><span class="strong">{{ order.customer.display_name }}</span></div>
+            <div class="summary-row"><span>Телефон</span><span>{{ order.customer.phone|default:"—" }}</span></div>
+            <div class="summary-row"><span>Адрес</span><span>{{ order.delivery_address|default:"—" }}</span></div>
+            <div class="summary-row"><span>Дата доставки</span><span>{{ order.delivery_date|date:"d.m.Y"|default:"—" }}</span></div>
+            <div class="summary-row"><span>Менеджер</span><span>{% if order.manager %}{{ order.manager.get_full_name|default:order.manager.username }}{% else %}—{% endif %}</span></div>
+            {% if order.comment %}<div class="divider"></div><div class="small muted">{{ order.comment }}</div>{% endif %}
+        </div>
+        <div class="card">
+            <div class="card-title mb-2">Статус заказа</div>
+            <div class="stack" style="gap:8px;">
+                {% for value, label in order.status_choices %}
+                <div class="flex">
+                    <span class="dot {% if value == order.status %}dot--rose{% endif %}"></span>
+                    <span class="{% if value == order.status %}strong{% else %}muted{% endif %} small">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="small muted mt-2">При отмене заказа остатки автоматически возвращаются на склад.</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

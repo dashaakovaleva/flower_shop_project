@@ -1,7 +1,37 @@
-venv/
+# Python
 __pycache__/
-*.pyc
-*.sqlite3
-.env
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Виртуальное окружение
+venv/
+.venv/
+env/
+
+# Django
+db.sqlite3
+db_backup*.sqlite3
+db_before_upgrade.sqlite3
+staticfiles/
+media/
+*.log
+
+# IDE
 .idea/
 .vscode/
+*.iml
+
+# Секреты
+.env
+.env.local
+
+# ОС
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Временные файлы
+*.tmp
+~$*

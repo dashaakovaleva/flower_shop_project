@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static humanize shop_tags %}
+{% block title %}Прогноз спроса — FloraIS{% endblock %}
+{% block head %}<script src="{% static 'vendor/plotly.min.js' %}"></script>{% endblock %}
+{% block page_title %}Прогноз спроса{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Прогноз спроса на 7 дней</h1>
+        <p>Модель учитывает день недели, годовую сезонность и разгон перед праздниками.</p>
+    </div>
+    <div class="page-actions">
+        <form method="post" action="{% url 'forecast_run' %}">
+            {% csrf_token %}
+            <button class="btn btn--primary" type="submit" data-confirm="Переобучить модель на всей истории и обновить рекомендации? Это может занять до минуты.">🔄 Обновить прогноз</button>
+        </form>
+        <a class="btn btn--outline" href="{% url 'analytics' %}">📈 Качество модели</a>
+    </div>
+</div>
+
+{% if no_run %}
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-icon">🔮</span>
+        <strong>Рабочий прогноз ещё не построен</strong>
+        <p>Сначала подготовьте данные и обучите модель.</p>
+        <form method="post" action="{% url 'forecast_run' %}">
+            {% csrf_token %}
+            <button class="btn btn--primary" type="submit">Построить прогноз на 7 дней</button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="card mb-3">
+    <form method="get" class="filter-bar">
+        <div class="grow">
+            <label class="form-label">Товар</label>
+            <select class="form-control" name="product" onchange="this.form.submit()">
+                <option value="all" {% if not selected_product %}selected{% endif %}>Все товары (суммарно)</option>
+                {% for item in products %}
+                <option value="{{ item.pk }}" {% if selected_product and selected_product.pk == item.pk %}selected{% endif %}>{{ item.image_emoji }} {{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="small muted">Прогноз от {{ run.created_at|date:"d.m.Y H:i" }} · {{ run.model_name }}</div>
+        <button class="btn btn--outline" type="submit">Показать</button>
+    </form>
+</div>
+
+<div class="forecast-hero mb-3">
+    <div class="chart-card">
+        {{ chart|safe }}
+    </div>
+    <div class="forecast-summary">
+        <div class="kicker small" style="color:#b7dcca;">Сводка прогноза</div>
+        <h3>{{ label }}</h3>
+        <div class="summary-row"><span>Горизонт</span><span>{{ summary.horizon|default:run.horizon_days }} дней</span></div>
+        <div class="summary-row"><span>Суммарный спрос</span><span>{{ total_forecast|floatformat:0 }} шт.</span></div>
+        <div class="summary-row"><span>Точек прогноза</span><span>{{ forecast_rows|length }}</span></div>
+        <div class="summary-row"><span>Пиковых дней</span><span>{{ peak_count }}</span></div>
+        <div class="summary-row"><span>Рекомендаций</span><span>{{ recommendations|length }}</span></div>
+        {% if summary.nearest_peak %}
+        <div class="summary-row"><span>Ближайший пик</span><span>{{ summary.nearest_peak.name }} · {{ summary.nearest_peak.days_until }} дн.</span></div>
+        {% endif %}
+        <div class="summary-row total"><span>Закупить</span><span>{{ total_purchase }} шт.</span></div>
+        {% if summary.fallback_products %}
+        <div class="small mt-2" style="color:#ffd6df;">Fallback на регрессию: {{ summary.fallback_products }} тов.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card card--flush">
+        <div class="card-header" style="padding:20px 22px 0;">
+            <div><div class="card-title">Прогноз по дням</div><div class="card-subtitle">Доверительный интервал 80%</div></div>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Дата</th><th>День</th><th class="num">Прогноз</th><th class="num">Интервал</th><th>Пик</th></tr></thead>
+                <tbody>
+                {% for row in forecast_rows %}
+                <tr {% if row.is_peak %}style="background:#fff8ec;"{% endif %}>
+                    <td class="strong">{{ row.date|date:"d.m.Y" }}</td>
+                    <td class="muted">{{ row.date|date:"l" }}</td>
+                    <td class="num strong">{{ row.predicted_quantity|floatformat:1 }} шт.</td>
+                    <td class="num small muted">{{ row.lower_bound|floatformat:0 }}–{{ row.upper_bound|floatformat:0 }}</td>
+                    <td>{% if row.is_peak %}<span class="badge badge--gold">⭐ {{ row.holiday_name }}</span>{% else %}<span class="muted small">—</span>{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5"><div class="empty-state">Нет прогнозных точек.</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div><div class="card-title">Рекомендации по закупке</div><div class="card-subtitle">С учётом страхового запаса {{ summary.safety_rate|default:0.15|as_percent }}</div></div>
+            <span class="badge badge--danger">{{ recommendations|length }}</span>
+        </div>
+        {% for item in recommendations %}
+        <div class="recommendation-row">
+            <div>
+                <div class="recommendation-title">
+                    {{ item.product.image_emoji }} {{ item.product.name }}
+                    <span class="badge badge--{{ item.priority_css }}">{{ item.priority_label }}</span>
+                </div>
+                <div class="recommendation-reason">{{ item.reason }}</div>
+                <div class="progress mt-1"><div class="progress-bar {% if item.priority == 'critical' %}progress-bar--danger{% elif item.priority == 'high' %}progress-bar--warning{% endif %}" style="width: {{ item.coverage_percent|floatformat:0 }}%;"></div></div>
+                <div class="small muted mt-1">Покрытие остатком: {{ item.coverage_percent|floatformat:0 }}%</div>
+            </div>
+            <div class="purchase-qty">+{{ item.purchase_quantity }}<small>закупить, шт.</small></div>
+        </div>
+        {% empty %}
+        <div class="empty-state"><span class="empty-icon">✅</span><strong>Закупка не требуется</strong><p>Остатков хватает на прогнозируемый спрос.</p></div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="explain-box mt-3">
+    <strong>Как читать прогноз.</strong> Красная линия — ожидаемый спрос, розовая область — 80% доверительный интервал.
+    Если нижняя граница выше текущего остатка, дефицит вероятен; если верхняя ниже остатка, запас достаточен даже при оптимистичном сценарии.
+    Рекомендация «закупить» учитывает страховой запас и округляется вверх.
+</div>
+{% endif %}
+{% endblock %}

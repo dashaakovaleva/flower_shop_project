@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Доступ запрещён — FloraIS{% endblock %}
+{% block page_title %}Доступ запрещён{% endblock %}
+{% block content %}
+<div class="card"><div class="empty-state">
+    <span class="empty-icon">🔒</span>
+    <h1>403 — недостаточно прав</h1>
+    <p>Эта страница доступна другой роли. Войдите под менеджером или администратором.</p>
+    <a class="btn btn--primary" href="{% url 'home' %}">На главную</a>
+</div></div>
+{% endblock %}

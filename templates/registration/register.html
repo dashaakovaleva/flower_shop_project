@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — FloraIS{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+    <section class="auth-side">
+        <a class="brand" href="{% url 'home' %}">
+            <span class="brand-mark">🌷</span>
+            <span><span class="brand-name">FloraIS</span><span class="brand-sub">flower intelligence</span></span>
+        </a>
+        <div>
+            <div class="hero-eyebrow"><span class="dot"></span> Личный кабинет клиента</div>
+            <h2>Заказывайте цветы в несколько кликов</h2>
+            <p>После регистрации доступны каталог с фильтрами, корзина, оформление доставки и история заказов с актуальными статусами.</p>
+        </div>
+        <p class="small">FloraIS · учебный проект · 2026</p>
+    </section>
+    <section class="auth-form-wrap">
+        <div class="auth-card">
+            <div class="kicker small green">Новый клиент</div>
+            <h1>Регистрация</h1>
+            <p class="muted">Создайте аккаунт клиента цветочного магазина.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert--error">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="form-help">{{ field.help_text|safe }}</div>{% endif %}
+                    {% if field.errors %}<div class="form-error">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                <button class="btn btn--primary btn--block" type="submit">Создать аккаунт →</button>
+            </form>
+
+            <div class="auth-links">
+                <span>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></span>
+                <a href="{% url 'catalog' %}">Каталог →</a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

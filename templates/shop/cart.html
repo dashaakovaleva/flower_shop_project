@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}Корзина — FloraIS{% endblock %}
+{% block page_title %}Корзина{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Корзина</h1><p>Проверьте состав заказа перед оформлением.</p></div>
+    <a class="btn btn--outline" href="{% url 'catalog' %}">← Продолжить покупки</a>
+</div>
+
+{% if items %}
+<div class="cart-layout">
+    <div class="card">
+        {% for item in items %}
+        <div class="cart-item">
+            <a class="cart-thumb" href="{% url 'product_detail' item.product.pk %}">{{ item.product.image_emoji }}</a>
+            <div>
+                <a class="product-name" href="{% url 'product_detail' item.product.pk %}">{{ item.product.name }}</a>
+                <div class="small muted">{{ item.product.sku }} · {{ item.product.price|money }} / {{ item.product.unit }}</div>
+                <div class="qty-form">
+                    <form method="post" action="{% url 'cart_update' item.product.pk %}" class="flex">
+                        {% csrf_token %}
+                        <input class="form-control form-control-sm" type="number" name="quantity" value="{{ item.quantity }}" min="0" max="{{ item.product.stock_quantity }}" style="width: 70px;">
+                        <button class="btn btn--outline btn--sm" type="submit">Обновить</button>
+                    </form>
+                    <form method="post" action="{% url 'cart_remove' item.product.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn--ghost btn--sm" type="submit">Удалить</button>
+                    </form>
+                </div>
+            </div>
+            <div class="cart-line-total">{{ item.line_total|money }}<div class="small muted">{{ item.quantity }} × {{ item.product.price|money }}</div></div>
+        </div>
+        {% endfor %}
+    </div>
+    <aside class="summary-box">
+        <div class="card-title mb-2">Итого</div>
+        <div class="summary-row"><span>Товаров</span><span>{{ cart_count }} шт.</span></div>
+        <div class="summary-row"><span>Доставка</span><span>рассчитает менеджер</span></div>
+        <div class="summary-row total"><span>К оплате</span><span>{{ cart.total|money }}</span></div>
+        <a class="btn btn--primary btn--block mt-2" href="{% url 'checkout' %}">Оформить заказ →</a>
+        <div class="small muted mt-2">Остатки проверяются автоматически при оформлении.</div>
+    </aside>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-icon">🛒</span>
+        <strong>Корзина пуста</strong>
+        <p>Добавьте цветы из каталога — и они появятся здесь.</p>
+        <a class="btn btn--primary" href="{% url 'catalog' %}">Перейти в каталог</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

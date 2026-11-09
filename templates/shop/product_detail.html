@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}{{ product.name }} — FloraIS{% endblock %}
+{% block page_title %}Карточка товара{% endblock %}
+{% block content %}
+<div class="mb-2"><a class="link-arrow" href="{% url 'catalog' %}">← Назад в каталог</a></div>
+<div class="product-detail">
+    <div class="product-detail-visual" style="background: radial-gradient(circle at 50% 40%, #fff, transparent 60%), linear-gradient(135deg, {{ product.category.accent }}22, #fdf7f0);">
+        {{ product.image_emoji }}
+    </div>
+    <div class="card">
+        <div class="flex flex-wrap mb-1">
+            <span class="badge badge--info">{{ product.category.icon }} {{ product.category.name }}</span>
+            <span class="badge badge--{% if product.stock_status == 'out' %}danger{% elif product.stock_status == 'low' %}warning{% else %}success{% endif %}">{{ product.stock_status_label }} · {{ product.stock_quantity }} шт.</span>
+            <span class="badge badge--neutral">{{ product.sku }}</span>
+        </div>
+        <h1>{{ product.name }}</h1>
+        <p class="muted">{{ product.description|default:"Авторская работа флориста FloraIS. Состав и упаковка могут незначительно отличаться в зависимости от сезона." }}</p>
+        <div class="price-lg mb-2">{{ product.price|money }}</div>
+        <div class="kpi-inline mb-3">
+            <div><strong>{{ product.margin_percent|floatformat:0 }}%</strong><span>маржа</span></div>
+            <div><strong>{{ product.min_stock }}</strong><span>мин. остаток</span></div>
+            <div><strong>{{ product.unit }}</strong><span>единица</span></div>
+        </div>
+        {% if product.stock_quantity > 0 %}
+        <form method="post" action="{% url 'cart_add' product.pk %}" class="flex flex-wrap">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'cart' %}">
+            <div style="width: 110px;">
+                <label class="form-label">Количество</label>
+                <input class="form-control" type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}">
+            </div>
+            {% if user.is_authenticated %}
+            <button class="btn btn--primary" type="submit" style="align-self: flex-end;">🛒 Добавить в корзину</button>
+            {% else %}
+            <a class="btn btn--primary" href="{% url 'login' %}?next={{ request.path|urlencode }}" style="align-self: flex-end;">Войти и заказать</a>
+            {% endif %}
+        </form>
+        {% else %}
+        <div class="alert alert--warning">Товар временно отсутствует. Менеджер уже получил сигнал о необходимости закупки.</div>
+        {% endif %}
+        <div class="divider"></div>
+        <div class="small muted">Доставка по Москве — от 500 ₽. Можно указать дату и адрес при оформлении заказа.</div>
+    </div>
+</div>
+
+{% if related %}
+<div class="section-head mt-3"><div class="kicker">С этим часто покупают</div><h2>Похожие товары</h2></div>
+<div class="product-grid">
+    {% for item in related %}
+    <article class="product-card">
+        <a href="{% url 'product_detail' item.pk %}" class="product-visual" style="--cat-soft: {{ item.category.accent }}22;">
+            <span class="product-cat">{{ item.category.name }}</span>
+            <span class="product-emoji">{{ item.image_emoji }}</span>
+        </a>
+        <div class="product-body">
+            <a class="product-name" href="{% url 'product_detail' item.pk %}">{{ item.name }}</a>
+            <div class="product-price">{{ item.price|money }}</div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Вход — FloraIS{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+    <section class="auth-side">
+        <a class="brand" href="{% url 'home' %}">
+            <span class="brand-mark">🌷</span>
+            <span><span class="brand-name">FloraIS</span><span class="brand-sub">flower intelligence</span></span>
+        </a>
+        <div>
+            <div class="hero-eyebrow"><span class="dot"></span> Информационная система магазина</div>
+            <h2>Прогноз, который помогает не остаться без цветов в пик</h2>
+            <p>Войдите, чтобы увидеть дашборд, прогноз на 7 дней, рекомендации по закупке и качество модели на отложенном годе.</p>
+        </div>
+        <p class="small">Ковалева Дарья Игоревна · 3 курс · Инжиниринг цифровых бизнес-экосистем</p>
+    </section>
+    <section class="auth-form-wrap">
+        <div class="auth-card">
+            <div class="kicker small green">Добро пожаловать</div>
+            <h1>Вход в систему</h1>
+            <p class="muted">Используйте демо-аккаунт или свои учётные данные.</p>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert--error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="form-error">{{ form.username.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}<div class="form-error">{{ form.password.errors }}</div>{% endif %}
+                </div>
+                <button class="btn btn--primary btn--block" type="submit">Войти →</button>
+            </form>
+
+            <div class="demo-accounts">
+                <strong>Демо-аккаунты</strong><br>
+                Менеджер: <code>manager</code> / <code>manager123</code><br>
+                Администратор: <code>admin</code> / <code>admin123</code><br>
+                Клиент: <code>client</code> / <code>client123</code>
+            </div>
+
+            <div class="auth-links">
+                <span>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></span>
+                <a href="{% url 'catalog' %}">Каталог без входа →</a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

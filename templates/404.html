@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Страница не найдена — FloraIS{% endblock %}
+{% block page_title %}404{% endblock %}
+{% block content %}
+<div class="card"><div class="empty-state">
+    <span class="empty-icon">🌿</span>
+    <h1>404 — страница не найдена</h1>
+    <p>Возможно, ссылка устарела или в адресе ошибка.</p>
+    <a class="btn btn--primary" href="{% url 'home' %}">На главную</a>
+</div></div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}FloraIS — информационная система цветочного магазина{% endblock %}
+{% block body_class %}landing{% endblock %}
+{% block content %}
+<nav class="landing-nav">
+    <a class="brand" href="{% url 'home' %}">
+        <span class="brand-mark">🌷</span>
+        <span>
+            <span class="brand-name">FloraIS</span>
+            <span class="brand-sub">flower intelligence</span>
+        </span>
+    </a>
+    <div class="landing-links">
+        <a href="{% url 'catalog' %}">Каталог</a>
+        <a href="{% url 'docs' %}">Документация</a>
+        <a href="/api/" target="_blank" rel="noopener">API</a>
+        <a class="btn btn--outline btn--sm" href="{% url 'login' %}">Войти</a>
+        <a class="btn btn--primary btn--sm" href="{% url 'register' %}">Регистрация</a>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-eyebrow"><span class="dot"></span> Информационная система · прогнозирование спроса</div>
+    <h1>Управляйте цветочным магазином <span>на данных</span>, а не на интуиции</h1>
+    <p class="hero-lead">
+        FloraIS объединяет каталог, заказы, склад и клиентов с прогнозной моделью.
+        Система видит приближение 14 февраля, 23 февраля, 8 марта, 1 сентября и 5 октября
+        и заранее подсказывает менеджеру, сколько цветов закупить.
+    </p>
+    <div class="hero-actions">
+        <a class="btn btn--rose" href="{% url 'catalog' %}">Открыть каталог →</a>
+        <a class="btn btn--outline" href="{% url 'login' %}">Демо-вход для менеджера</a>
+    </div>
+    <div class="hero-stats">
+        <div class="hero-stat"><strong>{{ products_count }}</strong><span>товаров в каталоге</span></div>
+        <div class="hero-stat"><strong>{{ categories|length }}</strong><span>категорий</span></div>
+        <div class="hero-stat"><strong>{{ peaks|length }}</strong><span>пиковых даты РФ</span></div>
+        <div class="hero-stat"><strong>{% if mape %}{{ mape|floatformat:1 }}%{% else %}—{% endif %}</strong><span>MAPE модели</span></div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-head">
+        <div class="kicker">Что умеет система</div>
+        <h2>Полный контур управления магазином</h2>
+        <p class="muted">Не только учёт продаж, но и поддержка решений: прогноз, страховой запас и рекомендации по закупке.</p>
+    </div>
+    <div class="grid grid-3">
+        <div class="feature-card">
+            <div class="feature-icon">🧾</div>
+            <h3>Заказы и остатки</h3>
+            <p>Оформление заказа автоматически списывает товар. Отмена возвращает остатки, а попытка продать больше наличия блокируется.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <h3>Три роли</h3>
+            <p>Клиент видит каталог и свои заказы, менеджер — панель управления, администратор — справочники и параметры системы.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔮</div>
+            <h3>Прогноз на 7 дней</h3>
+            <p>SARIMAX с праздничными признаками строит прогноз, показывает доверительный интервал и выделяет пиковые даты.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <h3>Рекомендации по закупке</h3>
+            <p>Прогноз сравнивается с остатком и страховым запасом 15%. Система ранжирует дефицит по критичности.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h3>Оценка качества</h3>
+            <p>Бэктест на отложенном годе: MAE, RMSE, MAPE, WAPE, покрытие интервала и ошибки I/II рода.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚖️</div>
+            <h3>Синтетика vs реальность</h3>
+            <p>Недельный и месячный профили синтетики сопоставляются с внешним реальным датасетом продаж цветов.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-head">
+        <div class="kicker">Календарь спроса</div>
+        <h2>Пять дат, которые меняют всё</h2>
+        <p class="muted">В эти дни спрос вырастает в 2–6 раз. Модель учитывает не только сам праздник, но и 7–14 дней разгона перед ним.</p>
+    </div>
+    <div class="peak-strip">
+        {% for peak in peaks %}
+        <div class="peak-card" style="--peak-color: {{ peak.color }}">
+            <div class="peak-day">{{ peak.day }}</div>
+            <div class="peak-month">{{ peak.month|ru_month }}</div>
+            <div class="peak-name">{{ peak.name }}</div>
+            <div class="small muted mt-1">×{{ peak.demand_coefficient }} к обычному дню</div>
+        </div>
+        {% empty %}
+        <div class="notice">Справочник пиковых дат ещё не заполнен. Выполните <code>python manage.py seed_reference</code>.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="grid grid-2">
+        <div class="card card--accent">
+            <div class="kicker small green">Архитектура</div>
+            <h2>Классическая ИС, а не отдельная модель</h2>
+            <p class="muted">Реляционная база данных, ролевая модель, бизнес-логика заказа, REST API, серверные шаблоны и прогнозный модуль как сервис поддержки решений.</p>
+            <div class="tech-row mt-2">
+                <span class="tech-pill">Python</span>
+                <span class="tech-pill">Django</span>
+                <span class="tech-pill">DRF</span>
+                <span class="tech-pill">SQLite / PostgreSQL</span>
+                <span class="tech-pill">pandas</span>
+                <span class="tech-pill">statsmodels</span>
+                <span class="tech-pill">Plotly</span>
+                <span class="tech-pill">GitHub</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="kicker small green">Как проверяется прогноз</div>
+            <h2>2 года обучения → 3-й год теста</h2>
+            <p class="muted">Первый и второй год — синтетика с праздничными пиками. Третий год генерируется отдельным потоком с изменёнными условиями и не участвует в обучении. На нём считаются ошибки обычных и пиковых дней, а также ложные и пропущенные сигналы дефицита.</p>
+            <div class="kpi-inline mt-2">
+                <div><strong>MAE</strong><span>средняя абсолютная ошибка</span></div>
+                <div><strong>RMSE</strong><span>штраф за крупные промахи</span></div>
+                <div><strong>MAPE</strong><span>относительная ошибка</span></div>
+                <div><strong>I / II род</strong><span>ложная тревога / пропуск</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-panel">
+    <div>
+        <div class="kicker small green">Демонстрация</div>
+        <h2 class="mb-1">Войдите и посмотрите систему в работе</h2>
+        <p class="muted mb-0">Менеджер видит прогноз и рекомендации, клиент — каталог и личный кабинет, администратор — управление справочниками.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn--primary" href="{% url 'login' %}">Войти в систему</a>
+        <a class="btn btn--outline" href="{% url 'register' %}">Создать аккаунт клиента</a>
+    </div>
+</section>
+
+<div class="notice mt-3">
+    <strong>Демо-аккаунты:</strong> менеджер — <code>manager / manager123</code>, администратор — <code>admin / admin123</code>, клиент — <code>client / client123</code>.
+</div>
+{% endblock %}

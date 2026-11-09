@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static humanize shop_tags %}
+{% block title %}Дашборд — FloraIS{% endblock %}
+{% block head %}<script src="{% static 'vendor/plotly.min.js' %}"></script>{% endblock %}
+{% block page_title %}Дашборд менеджера{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Добрый день, {{ user.first_name|default:user.username }} 👋</h1>
+        <p>Сводка по магазину за последние 30 дней и сигналы на ближайшую неделю.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn--outline" href="{% url 'forecast' %}">🔮 Прогноз</a>
+        <a class="btn btn--primary" href="{% url 'manager_orders' %}">🧾 Заказы</a>
+    </div>
+</div>
+
+<div class="grid grid-4 mb-3">
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Выручка за 30 дней</div>
+        <div class="stat-value">{{ revenue_30|money }}</div>
+        <div class="stat-hint">
+            {% if revenue_growth is not None %}
+            <span class="trend {% if revenue_growth >= 0 %}trend--up{% else %}trend--down{% endif %}">
+                {% if revenue_growth >= 0 %}↑{% else %}↓{% endif %} {{ revenue_growth|floatformat:1 }}%
+            </span> к прошлому периоду
+            {% else %}Нет базы сравнения{% endif %}
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-label">Заказы за 30 дней</div>
+        <div class="stat-value">{{ orders_30 }}</div>
+        <div class="stat-hint">Средний чек — {{ avg_check|money }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🌷</div>
+        <div class="stat-label">Товары в каталоге</div>
+        <div class="stat-value">{{ products_count }}</div>
+        <div class="stat-hint">Продано за месяц: {{ quantity_30|number }} шт.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-label">MAPE модели</div>
+        <div class="stat-value">{% if mape %}{{ mape|floatformat:1 }}%{% else %}—{% endif %}</div>
+        <div class="stat-hint">
+            {% if peak_mape %}Пиковые дни: {{ peak_mape|floatformat:1 }}%{% else %}Бэктест не выполнен{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2-1 mb-3">
+    <div class="chart-card">
+        {{ revenue_chart|safe }}
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Ближайшие пики</div>
+                <div class="card-subtitle">Праздничные даты и разгон спроса</div>
+            </div>
+            <span class="badge badge--gold">{{ upcoming_peaks|length }}</span>
+        </div>
+        <div class="peak-list">
+            {% for peak in upcoming_peaks %}
+            <div class="peak-row">
+                <div class="peak-date">{{ peak.date|date:"d" }}<br>{{ peak.date|date:"m" }}</div>
+                <div>
+                    <div class="peak-name">{{ peak.name }}</div>
+                    <div class="small muted">{{ peak.date|date:"d E Y" }}</div>
+                </div>
+                <div class="peak-days">через {{ peak.days }} дн.</div>
+            </div>
+            {% empty %}
+            <div class="empty-state"><span class="empty-icon">🌿</span>Ближайших пиков нет.</div>
+            {% endfor %}
+        </div>
+        <a class="btn btn--ghost btn--sm mt-2" href="{% url 'forecast' %}">Открыть прогноз →</a>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-3">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Рекомендации по дозакупке</div>
+                <div class="card-subtitle">
+                    {% if operational %}Прогноз от {{ operational.created_at|date:"d.m.Y H:i" }}{% else %}Прогноз ещё не построен{% endif %}
+                </div>
+            </div>
+            <a class="link-arrow" href="{% url 'forecast' %}">Все</a>
+        </div>
+        {% if recommendations %}
+            {% for item in recommendations %}
+            <div class="recommendation-row">
+                <div>
+                    <div class="recommendation-title">
+                        {{ item.product.image_emoji }} {{ item.product.name }}
+                        <span class="badge badge--{{ item.priority_css }}">{{ item.priority_label }}</span>
+                    </div>
+                    <div class="recommendation-reason">
+                        Остаток {{ item.current_stock }} шт. · прогноз {{ item.forecast_demand|floatformat:0 }} шт. · страховой запас {{ item.safety_stock|floatformat:0 }} шт.
+                    </div>
+                </div>
+                <div class="purchase-qty">+{{ item.purchase_quantity }}<small>закупить</small></div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <span class="empty-icon">✅</span>
+                <strong>Дефицита не прогнозируется</strong>
+                <p class="small">Запасов хватает на ближайшую неделю с учётом страхового запаса.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Товары ниже минимального остатка</div>
+                <div class="card-subtitle">Требуют внимания менеджера</div>
+            </div>
+            <span class="badge {% if low_stock_count %}badge--danger{% else %}badge--success{% endif %}">{{ low_stock_count }}</span>
+        </div>
+        {% if low_stock %}
+        <div class="table-wrap">
+            <table class="table table--compact">
+                <thead><tr><th>Товар</th><th class="num">Остаток</th><th class="num">Минимум</th></tr></thead>
+                <tbody>
+                {% for product in low_stock %}
+                <tr>
+                    <td><span class="strong">{{ product.image_emoji }} {{ product.name }}</span></td>
+                    <td class="num"><span class="badge badge--{% if product.stock_status == 'out' %}danger{% else %}warning{% endif %}">{{ product.stock_quantity }}</span></td>
+                    <td class="num">{{ product.min_stock }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><span class="empty-icon">🌿</span>Все запасы в норме.</div>
+        {% endif %}
+        <a class="btn btn--ghost btn--sm mt-2" href="{% url 'manager_products' %}?low=1">Управлять остатками →</a>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card card--flush">
+        <div class="card-header" style="padding: 20px 22px 0; margin-bottom: 10px;">
+            <div>
+                <div class="card-title">Последние заказы</div>
+                <div class="card-subtitle">Онлайн и офис / телефон</div>
+            </div>
+            <a class="link-arrow" href="{% url 'manager_orders' %}">Все заказы</a>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Заказ</th><th>Клиент</th><th>Статус</th><th class="num">Сумма</th></tr></thead>
+                <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td><a class="strong" href="{% url 'order_detail' order.pk %}">{{ order.number }}</a><div class="small muted">{{ order.created_at|date:"d.m.Y H:i" }}</div></td>
+                    <td>{{ order.customer.display_name }}</td>
+                    <td><span class="badge badge--{{ order.status_css }}">{{ order.status_label }}</span></td>
+                    <td class="num">{{ order.total_amount|money }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4"><div class="empty-state">Заказов пока нет.</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="chart-card">
+        {{ top_chart|safe }}
+    </div>
+</div>
+
+{% if backtest %}
+<div class="notice mt-3">
+    <strong>Качество модели:</strong> MAPE на всех днях — {{ backtest.metric_all.mape|default:"—" }}%,
+    на обычных — {{ backtest.metric_normal.mape|default:"—" }}%,
+    на пиковых — {{ backtest.metric_peak.mape|default:"—" }}%.
+    <a class="link-arrow" href="{% url 'analytics' %}">Подробный разбор →</a>
+</div>
+{% endif %}
+{% endblock %}

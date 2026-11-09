@@ -1,0 +1,333 @@
+{
+  "backtest": {
+    "id": 6,
+    "model": "SARIMAX(1,0,1)(1,0,1,7) + экзогенные признаки",
+    "train": [
+      "2023-11-10",
+      "2025-11-08"
+    ],
+    "test": [
+      "2025-11-09",
+      "2026-11-08"
+    ],
+    "summary": {
+      "duration_seconds": 213.75,
+      "products": 16,
+      "forecast_points": 5840,
+      "requested_model": "sarimax",
+      "used_models": [
+        "SARIMAX(1,0,1)(1,0,1,7) + экзогенные признаки"
+      ],
+      "fallback_products": 0,
+      "safety_rate": 0.15,
+      "demand_confusion": {
+        "tp": 920,
+        "fp": 365,
+        "fn": 177,
+        "tn": 4378,
+        "total": 5840,
+        "precision": 71.6,
+        "recall": 83.87,
+        "f1": 77.25,
+        "accuracy": 90.72,
+        "type_i_error": 365,
+        "type_ii_error": 177,
+        "type_i_rate": 7.7,
+        "type_ii_rate": 16.13,
+        "threshold": 15.5,
+        "threshold_label": "80-й перцентиль обучения по каждому товару",
+        "definition": "Высокий спрос = факт или прогноз выше 80-го перцентиля обучающей выборки"
+      },
+      "stockout_confusion": {
+        "tp": 94,
+        "fp": 115,
+        "fn": 11,
+        "tn": 612,
+        "total": 832,
+        "precision": 44.98,
+        "recall": 89.52,
+        "f1": 59.87,
+        "accuracy": 84.86,
+        "type_i_error": 115,
+        "type_ii_error": 11,
+        "type_i_rate": 15.82,
+        "type_ii_rate": 10.48,
+        "definition": "Тревога: прогноз спроса с запасом 15% выше имитируемого остатка; дефицит: фактический спрос выше остатка",
+        "horizon": 7,
+        "stock_quantile": 0.9
+      },
+      "comparison": {
+        "available": true,
+        "synthetic": {
+          "mean": 212.02,
+          "std": 166.07,
+          "cv": 0.783,
+          "skew": 5.23,
+          "p10": 127.9,
+          "p50": 161.5,
+          "p90": 314.0,
+          "zero_share": 0.0,
+          "autocorr_lag1": 0.69,
+          "autocorr_lag7": 0.456
+        },
+        "real": {
+          "mean": 293.96,
+          "std": 239.62,
+          "cv": 0.815,
+          "skew": 3.494,
+          "p10": 116.37,
+          "p50": 228.7,
+          "p90": 513.39,
+          "zero_share": 0.0,
+          "autocorr_lag1": 0.236,
+          "autocorr_lag7": -0.025
+        },
+        "ks_statistic": 0.2185,
+        "ks_pvalue": 0.0,
+        "weekly_correlation": 0.9963,
+        "monthly_correlation": 0.0723,
+        "weekly_synthetic": {
+          "0": 0.7747,
+          "1": 0.7306,
+          "2": 0.8158,
+          "3": 0.8718,
+          "4": 1.2025,
+          "5": 0.9582,
+          "6": 1.6464
+        },
+        "weekly_real": {
+          "0": 0.7968,
+          "1": 0.7425,
+          "2": 0.8064,
+          "3": 0.8658,
+          "4": 1.1481,
+          "5": 0.962,
+          "6": 1.6784
+        },
+        "monthly_synthetic": {
+          "1": 0.6975,
+          "2": 1.5754,
+          "3": 2.1116,
+          "4": 0.8367,
+          "5": 0.8815,
+          "6": 0.8204,
+          "7": 0.7385,
+          "8": 0.8594,
+          "9": 0.9612,
+          "10": 0.8812,
+          "11": 0.7919,
+          "12": 0.8447
+        },
+        "monthly_real": {
+          "1": 0.6188,
+          "2": 1.113,
+          "3": 0.9315,
+          "4": 0.8929,
+          "5": 1.1748,
+          "6": 1.016,
+          "7": 1.0768,
+          "8": 0.9634,
+          "9": 0.9354,
+          "10": 1.3998,
+          "11": 0.9098,
+          "12": 0.9678
+        },
+        "synthetic_days": 730,
+        "real_days": 1128,
+        "real_start": "2016-12-12",
+        "real_end": "2020-08-31",
+        "interpretation": "Высокая корреляция недельного профиля означает, что синтетика воспроизводит реальный ритм спроса. Расхождение по KS и CV объясняется российскими праздничными пиками и разной длиной рядов."
+      },
+      "segment_metrics": {
+        "all": {
+          "n_obs": 5840,
+          "mae": 3.157,
+          "rmse": 11.014,
+          "mape": 22.676,
+          "wape": 23.329,
+          "bias_pct": 7.719,
+          "coverage_pct": 61.986,
+          "actual_mean": 13.534,
+          "predicted_mean": 14.579,
+          "segment": "all"
+        },
+        "normal": {
+          "n_obs": 5040,
+          "mae": 2.364,
+          "rmse": 3.925,
+          "mape": 21.965,
+          "wape": 20.34,
+          "bias_pct": 4.21,
+          "coverage_pct": 63.294,
+          "actual_mean": 11.62,
+          "predicted_mean": 12.11,
+          "segment": "normal"
+        },
+        "peak": {
+          "n_obs": 800,
+          "mae": 8.159,
+          "rmse": 28.08,
+          "mape": 27.154,
+          "wape": 31.881,
+          "bias_pct": 17.756,
+          "coverage_pct": 53.75,
+          "actual_mean": 25.591,
+          "predicted_mean": 30.135,
+          "segment": "peak"
+        }
+      },
+      "train_days": 730,
+      "test_days": 365,
+      "train_quantity_mean": 13.251,
+      "test_quantity_mean": 13.534
+    },
+    "metrics": [
+      {
+        "segment": "all",
+        "n_obs": 5840,
+        "mae": 3.157,
+        "rmse": 11.014,
+        "mape": 22.676,
+        "wape": 23.329,
+        "bias_pct": 7.719,
+        "coverage_pct": 61.986
+      },
+      {
+        "segment": "normal",
+        "n_obs": 5040,
+        "mae": 2.364,
+        "rmse": 3.925,
+        "mape": 21.965,
+        "wape": 20.34,
+        "bias_pct": 4.21,
+        "coverage_pct": 63.294
+      },
+      {
+        "segment": "peak",
+        "n_obs": 800,
+        "mae": 8.159,
+        "rmse": 28.08,
+        "mape": 27.154,
+        "wape": 31.881,
+        "bias_pct": 17.756,
+        "coverage_pct": 53.75
+      }
+    ]
+  },
+  "operational": {
+    "id": 5,
+    "summary": {
+      "duration_seconds": 256.66,
+      "products": 16,
+      "forecast_points": 112,
+      "recommendations": 13,
+      "critical": 7,
+      "high": 3,
+      "total_purchase_units": 493,
+      "used_models": [
+        "SARIMAX(1,0,1)(1,0,1,7) + экзогенные признаки"
+      ],
+      "fallback_products": 0,
+      "nearest_peak": {
+        "name": "14 февраля",
+        "date": "2027-02-14",
+        "days_until": 97
+      },
+      "horizon": 7,
+      "safety_rate": 0.15
+    },
+    "recommendations": [
+      {
+        "product": "Роза белая 50 см",
+        "priority": "critical",
+        "forecast_demand": 109.594,
+        "current_stock": 57,
+        "purchase_quantity": 70
+      },
+      {
+        "product": "Роза кустовая микс",
+        "priority": "critical",
+        "forecast_demand": 67.245,
+        "current_stock": 19,
+        "purchase_quantity": 60
+      },
+      {
+        "product": "Букет «Классика»",
+        "priority": "critical",
+        "forecast_demand": 47.212,
+        "current_stock": 23,
+        "purchase_quantity": 33
+      },
+      {
+        "product": "Композиция в коробке",
+        "priority": "critical",
+        "forecast_demand": 30.611,
+        "current_stock": 17,
+        "purchase_quantity": 19
+      },
+      {
+        "product": "Корзина «Премиум»",
+        "priority": "critical",
+        "forecast_demand": 14.577,
+        "current_stock": 3,
+        "purchase_quantity": 15
+      },
+      {
+        "product": "Хризантема белая",
+        "priority": "critical",
+        "forecast_demand": 78.418,
+        "current_stock": 32,
+        "purchase_quantity": 59
+      },
+      {
+        "product": "Гвоздика красная",
+        "priority": "critical",
+        "forecast_demand": 61.217,
+        "current_stock": 14,
+        "purchase_quantity": 58
+      },
+      {
+        "product": "Тюльпан микс",
+        "priority": "high",
+        "forecast_demand": 167.527,
+        "current_stock": 132,
+        "purchase_quantity": 62
+      },
+      {
+        "product": "Мимоза",
+        "priority": "high",
+        "forecast_demand": 62.08,
+        "current_stock": 46,
+        "purchase_quantity": 27
+      },
+      {
+        "product": "Букет «Мужской»",
+        "priority": "high",
+        "forecast_demand": 27.009,
+        "current_stock": 20,
+        "purchase_quantity": 13
+      },
+      {
+        "product": "Тюльпан красный",
+        "priority": "medium",
+        "forecast_demand": 226.227,
+        "current_stock": 199,
+        "purchase_quantity": 62
+      },
+      {
+        "product": "Букет «Весенний»",
+        "priority": "medium",
+        "forecast_demand": 37.134,
+        "current_stock": 35,
+        "purchase_quantity": 9
+      },
+      {
+        "product": "Орхидея фаленопсис",
+        "priority": "medium",
+        "forecast_demand": 21.681,
+        "current_stock": 20,
+        "purchase_quantity": 6
+      }
+    ]
+  }
+}

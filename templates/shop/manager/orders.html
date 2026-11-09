@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}Заказы — FloraIS{% endblock %}
+{% block page_title %}Управление заказами{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Заказы</h1><p>Обработка заказов, изменение статусов и контроль остатков.</p></div>
+    <a class="btn btn--primary" href="{% url 'forecast' %}">🔮 Прогноз спроса</a>
+</div>
+
+<div class="grid grid-4 mb-3">
+    {% for value, label in status_options %}
+    <a class="stat-card" href="{% url 'manager_orders' %}?status={{ value }}" style="text-decoration:none;">
+        <div class="stat-label">{{ label }}</div>
+        <div class="stat-value" style="font-size:1.55rem;">{{ status_counts|dict_get:value }}</div>
+        <div class="stat-hint">заказов</div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="card mb-3">
+    <form method="get" class="filter-bar">
+        <div class="grow">
+            <label class="form-label">Поиск</label>
+            <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Клиент, компания или номер…">
+        </div>
+        <div>
+            <label class="form-label">Статус</label>
+            <select class="form-control" name="status">
+                <option value="">Все статусы</option>
+                {% for value, label in status_options %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn--primary" type="submit">Применить</button>
+        <a class="btn btn--outline" href="{% url 'manager_orders' %}">Сбросить</a>
+    </form>
+</div>
+
+<div class="card card--flush">
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr><th>Заказ</th><th>Клиент</th><th>Состав</th><th>Статус</th><th class="num">Сумма</th><th>Изменить</th></tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><a class="strong" href="{% url 'order_detail' order.pk %}">{{ order.number }}</a><div class="small muted">{{ order.created_at|date:"d.m.Y H:i" }}</div></td>
+                <td>{{ order.customer.display_name }}<div class="small muted">{{ order.customer.phone }}</div></td>
+                <td class="small muted">{% for item in order.items.all %}{{ item.product.image_emoji }} {{ item.product.name }} × {{ item.quantity }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                <td><span class="badge badge--{{ order.status_css }}">{{ order.status_label }}</span></td>
+                <td class="num strong">{{ order.total_amount|money }}</td>
+                <td>
+                    <form method="post" action="{% url 'order_status_update' order.pk %}" class="flex" style="gap:6px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <select class="form-control form-control-sm" name="status" style="min-width:135px;">
+                            {% for value, label in status_options %}
+                            <option value="{{ value }}" {% if value == order.status %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn--outline btn--sm" type="submit">OK</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6"><div class="empty-state"><span class="empty-icon">🧾</span>Заказы не найдены.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

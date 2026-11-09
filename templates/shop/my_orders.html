@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}Мои заказы — FloraIS{% endblock %}
+{% block page_title %}Мои заказы{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Мои заказы</h1><p>История заказов и актуальные статусы доставки.</p></div>
+    <a class="btn btn--primary" href="{% url 'catalog' %}">💐 В каталог</a>
+</div>
+
+{% if orders %}
+<div class="stack">
+    {% for order in orders %}
+    <div class="card">
+        <div class="flex-between flex-wrap mb-2">
+            <div>
+                <div class="card-title">{{ order.number }} <span class="badge badge--{{ order.status_css }}">{{ order.status_label }}</span></div>
+                <div class="small muted">Создан {{ order.created_at|date:"d.m.Y H:i" }}{% if order.delivery_date %} · доставка {{ order.delivery_date|date:"d.m.Y" }}{% endif %}</div>
+            </div>
+            <div class="text-right">
+                <div class="metric-big" style="font-size:1.2rem;">{{ order.total_amount|money }}</div>
+                <a class="link-arrow" href="{% url 'order_detail' order.pk %}">Детали</a>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table table--compact">
+                <thead><tr><th>Товар</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
+                <tbody>
+                {% for item in order.items.all %}
+                <tr><td>{{ item.product.image_emoji }} {{ item.product.name }}</td><td class="num">{{ item.quantity }}</td><td class="num">{{ item.line_total|money }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card"><div class="empty-state"><span class="empty-icon">📋</span><strong>Заказов пока нет</strong><p>Выберите букет в каталоге — и оформите первый заказ.</p><a class="btn btn--primary" href="{% url 'catalog' %}">В каталог</a></div></div>
+{% endif %}
+{% endblock %}

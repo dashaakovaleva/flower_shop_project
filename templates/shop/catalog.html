@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load humanize shop_tags %}
+{% block title %}Каталог — FloraIS{% endblock %}
+{% block page_title %}Каталог цветов{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Каталог цветов и композиций</h1>
+        <p>Выберите букет, добавьте в корзину и оформите доставку.</p>
+    </div>
+    <a class="btn btn--outline" href="{% url 'cart' %}">🛒 Корзина{% if cart_count %} · {{ cart_count }}{% endif %}</a>
+</div>
+
+<form method="get" class="catalog-toolbar">
+    <div class="grow search">
+        <label class="form-label">Поиск</label>
+        <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Название или артикул…">
+    </div>
+    <div>
+        <label class="form-label">Сортировка</label>
+        <select class="form-control" name="sort" onchange="this.form.submit()">
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>По названию</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Сначала дешевле</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Сначала дороже</option>
+            <option value="new" {% if sort == 'new' %}selected{% endif %}>Новинки</option>
+        </select>
+    </div>
+    {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+    <button class="btn btn--primary" type="submit">Найти</button>
+</form>
+
+<div class="category-chips">
+    <a class="chip {% if not active_category %}active{% endif %}" href="{% url 'catalog' %}">Все</a>
+    {% for category in categories %}
+    <a class="chip {% if active_category == category.slug %}active{% endif %}" href="{% url 'catalog' %}?category={{ category.slug }}">{{ category.icon }} {{ category.name }}</a>
+    {% endfor %}
+</div>
+
+<div class="product-grid">
+    {% for product in products %}
+    <article class="product-card">
+        <a href="{% url 'product_detail' product.pk %}" class="product-visual" style="--cat-soft: {{ product.category.accent }}22;">
+            <span class="product-cat">{{ product.category.icon }} {{ product.category.name }}</span>
+            <span class="product-stock badge badge--{% if product.stock_status == 'out' %}danger{% elif product.stock_status == 'low' %}warning{% else %}success{% endif %}">{{ product.stock_status_label }}</span>
+            <span class="product-emoji">{{ product.image_emoji }}</span>
+        </a>
+        <div class="product-body">
+            <a class="product-name" href="{% url 'product_detail' product.pk %}">{{ product.name }}</a>
+            <div class="product-sku">{{ product.sku }}</div>
+            <div class="product-price">{{ product.price|money }}</div>
+            <div class="product-actions">
+                <a class="btn btn--outline btn--sm" href="{% url 'product_detail' product.pk %}">Подробнее</a>
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'cart_add' product.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="btn btn--primary btn--sm" type="submit" {% if product.stock_quantity == 0 %}disabled{% endif %}>В корзину</button>
+                </form>
+                {% else %}
+                <a class="btn btn--primary btn--sm" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="empty-state"><span class="empty-icon">🔍</span><strong>Ничего не найдено</strong><p>Попробуйте изменить запрос или сбросить фильтры.</p><a class="btn btn--outline" href="{% url 'catalog' %}">Сбросить фильтры</a></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

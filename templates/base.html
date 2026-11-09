@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FloraIS — информационная система цветочного магазина с прогнозированием спроса">
+    <title>{% block title %}FloraIS — система цветочного магазина{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌷</text></svg>">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<div class="app-shell {% if not user.is_authenticated %}app-shell--public{% endif %}">
+    {% if user.is_authenticated %}
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="{% url 'home' %}">
+            <span class="brand-mark">🌷</span>
+            <span>
+                <span class="brand-name">FloraIS</span>
+                <span class="brand-sub">flower intelligence</span>
+            </span>
+        </a>
+
+        <div class="nav">
+            {% if current_user_is_manager %}
+                <div class="nav-section">Управление</div>
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="nav-icon">📊</span>Дашборд</a>
+                <a class="nav-link {% if 'manager/orders' in request.path %}active{% endif %}" href="{% url 'manager_orders' %}"><span class="nav-icon">🧾</span>Заказы</a>
+                <a class="nav-link {% if 'manager/products' in request.path %}active{% endif %}" href="{% url 'manager_products' %}"><span class="nav-icon">🌹</span>Товары и остатки</a>
+                <a class="nav-link {% if 'manager/supplies' in request.path %}active{% endif %}" href="{% url 'manager_supplies' %}"><span class="nav-icon">📦</span>Поставки</a>
+                <div class="nav-section">Аналитика</div>
+                <a class="nav-link {% if request.resolver_match.url_name == 'forecast' %}active{% endif %}" href="{% url 'forecast' %}"><span class="nav-icon">🔮</span>Прогноз спроса</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'analytics' %}"><span class="nav-icon">📈</span>Качество модели</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'comparison' %}active{% endif %}" href="{% url 'comparison' %}"><span class="nav-icon">⚖️</span>Синтетика vs реальные</a>
+                {% if current_user_is_admin %}
+                <div class="nav-section">Администрирование</div>
+                <a class="nav-link" href="/admin/" target="_blank" rel="noopener"><span class="nav-icon">⚙️</span>Django Admin</a>
+                {% endif %}
+            {% else %}
+                <div class="nav-section">Магазин</div>
+                <a class="nav-link {% if request.resolver_match.url_name == 'catalog' %}active{% endif %}" href="{% url 'catalog' %}"><span class="nav-icon">💐</span>Каталог</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'cart' %}active{% endif %}" href="{% url 'cart' %}"><span class="nav-icon">🛒</span>Корзина</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}" href="{% url 'my_orders' %}"><span class="nav-icon">📋</span>Мои заказы</a>
+            {% endif %}
+            <div class="nav-section">Проект</div>
+            <a class="nav-link {% if request.resolver_match.url_name == 'docs' %}active{% endif %}" href="{% url 'docs' %}"><span class="nav-icon">📖</span>Документация</a>
+            <a class="nav-link" href="/api/" target="_blank" rel="noopener"><span class="nav-icon">🔌</span>REST API</a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <span class="avatar">{{ user.initials }}</span>
+                <span class="grow">
+                    <span class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</span>
+                    <span class="sidebar-user-role">{{ user.role_label }}</span>
+                </span>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="logout-btn" type="submit" title="Выйти">⏻</button>
+                </form>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    <div class="main">
+        {% if user.is_authenticated %}
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Открыть меню">☰</button>
+            <div class="topbar-title">{% block page_title %}FloraIS{% endblock %}</div>
+            <div class="topbar-actions">
+                {% if user.role == 'client' %}
+                <a class="icon-btn" href="{% url 'cart' %}" title="Корзина">🛒{% if cart_count %}<span class="cart-count">{{ cart_count }}</span>{% endif %}</a>
+                {% endif %}
+                <span class="badge {% if current_user_is_admin %}badge--danger{% elif current_user_is_manager %}badge--gold{% else %}badge--info{% endif %}">{{ user.role_label }}</span>
+                <a class="icon-btn" href="{% url 'docs' %}" title="Документация">?</a>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert--{{ message.tags|default:'info' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+
+        {% block footer %}
+        <footer class="footer">
+            <span>FloraIS · учебный проект по дисциплине «Информационные системы и технологии»</span>
+            <span>Ковалева Дарья Игоревна · 3 курс · 2026</span>
+        </footer>
+        {% endblock %}
+    </div>
+</div>
+<script src="{% static 'js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

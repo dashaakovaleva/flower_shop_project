@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static humanize shop_tags %}
+{% block title %}Качество модели — FloraIS{% endblock %}
+{% block head %}<script src="{% static 'vendor/plotly.min.js' %}"></script>{% endblock %}
+{% block page_title %}Качество прогнозной модели{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Бэктест: 2 года обучения → 3-й год теста</h1>
+        <p>Модель не видела третий год. На нём проверяются обычные и пиковые дни, а также ошибки I и II рода.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn--outline" href="{% url 'comparison' %}">⚖️ Синтетика vs реальные</a>
+        <form method="post" action="{% url 'backtest_run' %}">
+            {% csrf_token %}
+            <button class="btn btn--primary" type="submit" data-confirm="Запустить полный бэктест? Это может занять до минуты.">🔄 Запустить бэктест</button>
+        </form>
+    </div>
+</div>
+
+{% if no_run %}
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-icon">📈</span>
+        <strong>Бэктест ещё не выполнялся</strong>
+        <p>Сначала сгенерируйте данные командой <code>generate_sales</code>, затем запустите обучение.</p>
+        <form method="post" action="{% url 'backtest_run' %}">
+            {% csrf_token %}
+            <button class="btn btn--primary" type="submit">Запустить бэктест</button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="card mb-3">
+    <form method="get" class="filter-bar">
+        <div class="grow">
+            <label class="form-label">Запуск модели</label>
+            <select class="form-control" name="run" onchange="this.form.submit()">
+                {% for item in backtest_runs %}
+                <option value="{{ item.pk }}" {% if item.pk == run.pk %}selected{% endif %}>#{{ item.pk }} · {{ item.created_at|date:"d.m.Y H:i" }} · {{ item.model_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="pill">Обучение: {{ run.train_start|date:"d.m.Y" }} – {{ run.train_end|date:"d.m.Y" }}</div>
+        <div class="pill">Тест: {{ run.test_start|date:"d.m.Y" }} – {{ run.test_end|date:"d.m.Y" }}</div>
+        <div class="pill">Товаров: {{ summary.products }}</div>
+        <div class="pill">Точек: {{ summary.forecast_points }}</div>
+    </form>
+</div>
+
+<div class="grid grid-4 mb-3">
+    <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-label">MAPE, все дни</div>
+        <div class="stat-value">{% if metric_all %}{{ metric_all.mape|floatformat:1 }}%{% else %}—{% endif %}</div>
+        <div class="stat-hint">MAE {{ metric_all.mae|floatformat:2|default:"—" }} · RMSE {{ metric_all.rmse|floatformat:2|default:"—" }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🌿</div>
+        <div class="stat-label">MAPE, обычные дни</div>
+        <div class="stat-value">{% if metric_normal %}{{ metric_normal.mape|floatformat:1 }}%{% else %}—{% endif %}</div>
+        <div class="stat-hint">Наблюдений: {{ metric_normal.n_obs|default:"—" }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-label">MAPE, пиковые дни</div>
+        <div class="stat-value">{% if metric_peak %}{{ metric_peak.mape|floatformat:1 }}%{% else %}—{% endif %}</div>
+        <div class="stat-hint">Наблюдений: {{ metric_peak.n_obs|default:"—" }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📏</div>
+        <div class="stat-label">Покрытие интервала</div>
+        <div class="stat-value">{% if metric_all %}{{ metric_all.coverage_pct|floatformat:0 }}%{% else %}—{% endif %}</div>
+        <div class="stat-hint">Доля фактов внутри 80% интервала</div>
+    </div>
+</div>
+
+<div class="grid grid-2-1 mb-3">
+    <div class="chart-card">{{ backtest_chart|safe }}</div>
+    <div class="card">
+        <div class="card-header"><div class="card-title">Метрики по сегментам</div></div>
+        <div class="table-wrap">
+            <table class="table table--compact">
+                <thead><tr><th>Сегмент</th><th class="num">MAE</th><th class="num">RMSE</th><th class="num">MAPE</th><th class="num">WAPE</th><th class="num">Bias</th></tr></thead>
+                <tbody>
+                {% for metric in run_metrics %}
+                <tr>
+                    <td class="strong">{{ metric.get_segment_display }}</td>
+                    <td class="num">{{ metric.mae|floatformat:2 }}</td>
+                    <td class="num">{{ metric.rmse|floatformat:2 }}</td>
+                    <td class="num">{{ metric.mape|floatformat:1 }}%</td>
+                    <td class="num">{{ metric.wape|floatformat:1 }}%</td>
+                    <td class="num {% if metric.bias_pct > 0 %}rose{% endif %}">{{ metric.bias_pct|floatformat:1 }}%</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="divider"></div>
+        <div class="small muted">Bias > 0 — систематический перепрогноз; Bias < 0 — недопрогноз. WAPE устойчивее MAPE при нулевых продажах.</div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-3">
+    <div class="chart-card">{{ metrics_chart|safe }}</div>
+    <div class="chart-card">{{ error_chart|safe }}</div>
+</div>
+
+<div class="grid grid-2 mb-3">
+    <div class="card">
+        <div class="card-header">
+            <div><div class="card-title">Ошибки I/II рода: высокий спрос</div><div class="card-subtitle">Порог = 80-й перцентиль спроса обучения ({{ demand_confusion.threshold|default:"—" }})</div></div>
+            <span class="badge badge--info">precision {{ demand_confusion.precision|default:"—" }}%</span>
+        </div>
+        <div class="confusion-grid">
+            <div class="confusion-cell confusion-cell--tp"><div class="confusion-label">TP · верно поймали пик</div><div class="confusion-value">{{ demand_confusion.tp|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--fp"><div class="confusion-label">FP · ошибка I рода</div><div class="confusion-value">{{ demand_confusion.type_i_error|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--fn"><div class="confusion-label">FN · ошибка II рода</div><div class="confusion-value">{{ demand_confusion.type_ii_error|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--tn"><div class="confusion-label">TN · верно обычный день</div><div class="confusion-value">{{ demand_confusion.tn|default:0 }}</div></div>
+        </div>
+        <div class="kpi-inline mt-2">
+            <div><strong>{{ demand_confusion.recall|default:"—" }}%</strong><span>полнота</span></div>
+            <div><strong>{{ demand_confusion.f1|default:"—" }}%</strong><span>F1</span></div>
+            <div><strong>{{ demand_confusion.accuracy|default:"—" }}%</strong><span>accuracy</span></div>
+            <div><strong>{{ demand_confusion.type_i_rate|default:"—" }}%</strong><span>доля ложных тревог</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div><div class="card-title">Ошибки I/II рода: дефицит на 7 дней</div><div class="card-subtitle">Остаток имитируется как 65-й перцентиль недельного спроса</div></div>
+            <span class="badge badge--danger">{{ stockout_confusion.type_ii_error|default:0 }} пропусков</span>
+        </div>
+        <div class="confusion-grid">
+            <div class="confusion-cell confusion-cell--tp"><div class="confusion-label">TP · дефицит предсказан</div><div class="confusion-value">{{ stockout_confusion.tp|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--fp"><div class="confusion-label">FP · ложная закупка</div><div class="confusion-value">{{ stockout_confusion.type_i_error|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--fn"><div class="confusion-label">FN · дефицит пропущен</div><div class="confusion-value">{{ stockout_confusion.type_ii_error|default:0 }}</div></div>
+            <div class="confusion-cell confusion-cell--tn"><div class="confusion-label">TN · запаса хватило</div><div class="confusion-value">{{ stockout_confusion.tn|default:0 }}</div></div>
+        </div>
+        <div class="kpi-inline mt-2">
+            <div><strong>{{ stockout_confusion.precision|default:"—" }}%</strong><span>precision</span></div>
+            <div><strong>{{ stockout_confusion.recall|default:"—" }}%</strong><span>recall</span></div>
+            <div><strong>{{ stockout_confusion.f1|default:"—" }}%</strong><span>F1</span></div>
+            <div><strong>{{ stockout_confusion.type_i_rate|default:"—" }}%</strong><span>ложные тревоги</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><div><div class="card-title">Качество по товарам</div><div class="card-subtitle">Отсортировано по убыванию MAPE — где модель ошибается сильнее всего</div></div></div>
+    <div class="table-wrap">
+        <table class="table table--compact">
+            <thead><tr><th>Товар</th><th class="num">MAE</th><th class="num">RMSE</th><th class="num">MAPE</th><th class="num">MAPE пик</th><th class="num">Bias</th><th class="num">Покрытие</th></tr></thead>
+            <tbody>
+            {% for item in per_product %}
+            <tr>
+                <td class="strong">{{ item.product_name }}</td>
+                <td class="num">{{ item.mae|floatformat:2 }}</td>
+                <td class="num">{{ item.rmse|floatformat:2 }}</td>
+                <td class="num">{{ item.mape|floatformat:1 }}%</td>
+                <td class="num">{% if item.peak_mape %}{{ item.peak_mape|floatformat:1 }}%{% else %}—{% endif %}</td>
+                <td class="num">{{ item.bias_pct|floatformat:1 }}%</td>
+                <td class="num">{{ item.coverage_pct|floatformat:0 }}%</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7"><div class="empty-state">Нет данных по товарам.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="explain-box">
+        <strong>Ошибка I рода (ложная тревога).</strong> Модель сигнализирует о высоком спросе или дефиците, а фактически спрос обычный. Магазин закупает лишний товар, который может испортиться.
+    </div>
+    <div class="explain-box">
+        <strong>Ошибка II рода (пропуск).</strong> Модель не увидела пик или дефицит, хотя фактически спрос оказался высоким. Это риск нехватки цветов и упущенной выгоды — для магазина обычно опаснее ложной тревоги.
+    </div>
+</div>
+
+<div class="notice mt-3">
+    <strong>Параметры запуска:</strong> {{ run.model_name }} · fallback на регрессию: {{ summary.fallback_products }} тов. · длительность {{ summary.duration_seconds }} с. · средний спрос обучения {{ summary.train_quantity_mean }} шт./день.
+</div>
+{% endif %}
+{% endblock %}

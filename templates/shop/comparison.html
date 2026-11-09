@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static humanize shop_tags %}
+{% block title %}Синтетика vs реальные данные — FloraIS{% endblock %}
+{% block head %}<script src="{% static 'vendor/plotly.min.js' %}"></script>{% endblock %}
+{% block page_title %}Синтетика vs реальные данные{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Синтетические данные vs реальные продажи</h1>
+        <p>Проверяем, насколько генератор воспроизводит реальный ритм спроса: недельный профиль, сезонность, разброс и автокорреляцию.</p>
+    </div>
+    <a class="btn btn--outline" href="{% url 'analytics' %}">← К качеству модели</a>
+</div>
+
+{% if stats.available %}
+<div class="grid grid-4 mb-3">
+    <div class="stat-card">
+        <div class="stat-icon">🧪</div>
+        <div class="stat-label">KS-статистика</div>
+        <div class="stat-value">{{ stats.ks_statistic }}</div>
+        <div class="stat-hint">p-value = {{ stats.ks_pvalue }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label">Корреляция недели</div>
+        <div class="stat-value">{{ stats.weekly_correlation|floatformat:3 }}</div>
+        <div class="stat-hint">Сходство профиля Пн–Вс</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🗓️</div>
+        <div class="stat-label">Корреляция месяцев</div>
+        <div class="stat-value">{{ stats.monthly_correlation|floatformat:3 }}</div>
+        <div class="stat-hint">Сходство годовой формы</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-label">Длина рядов</div>
+        <div class="stat-value">{{ stats.synthetic_days }} / {{ stats.real_days }}</div>
+        <div class="stat-hint">синтетика / реальные дни</div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-3">
+    <div class="chart-card">{{ weekly_chart|safe }}</div>
+    <div class="chart-card">{{ monthly_chart|safe }}</div>
+</div>
+
+<div class="grid grid-2 mb-3" style="align-items:start;">
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">Сравнение распределений</div><div class="card-subtitle">Все значения нормированы на среднее</div></div></div>
+        <div class="table-wrap">
+            <table class="table table--compact">
+                <thead><tr><th>Показатель</th><th class="num">Синтетика</th><th class="num">Реальные</th></tr></thead>
+                <tbody>
+                <tr><td>Среднее (исходное)</td><td class="num">{{ stats.synthetic.mean|floatformat:2 }}</td><td class="num">{{ stats.real.mean|floatformat:2 }}</td></tr>
+                <tr><td>Стандартное отклонение</td><td class="num">{{ stats.synthetic.std|floatformat:2 }}</td><td class="num">{{ stats.real.std|floatformat:2 }}</td></tr>
+                <tr><td>Коэффициент вариации</td><td class="num">{{ stats.synthetic.cv }}</td><td class="num">{{ stats.real.cv }}</td></tr>
+                <tr><td>Асимметрия (skew)</td><td class="num">{{ stats.synthetic.skew }}</td><td class="num">{{ stats.real.skew }}</td></tr>
+                <tr><td>10-й перцентиль</td><td class="num">{{ stats.synthetic.p10|floatformat:1 }}</td><td class="num">{{ stats.real.p10|floatformat:1 }}</td></tr>
+                <tr><td>Медиана</td><td class="num">{{ stats.synthetic.p50|floatformat:1 }}</td><td class="num">{{ stats.real.p50|floatformat:1 }}</td></tr>
+                <tr><td>90-й перцентиль</td><td class="num">{{ stats.synthetic.p90|floatformat:1 }}</td><td class="num">{{ stats.real.p90|floatformat:1 }}</td></tr>
+                <tr><td>Доля нулевых дней</td><td class="num">{{ stats.synthetic.zero_share }}</td><td class="num">{{ stats.real.zero_share }}</td></tr>
+                <tr><td>Автокорреляция lag 1</td><td class="num">{{ stats.synthetic.autocorr_lag1 }}</td><td class="num">{{ stats.real.autocorr_lag1 }}</td></tr>
+                <tr><td>Автокорреляция lag 7</td><td class="num">{{ stats.synthetic.autocorr_lag7 }}</td><td class="num">{{ stats.real.autocorr_lag7 }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stack">
+        <div class="card">
+            <div class="card-title mb-2">Как интерпретировать</div>
+            <div class="comparison-quote">{{ stats.interpretation }}</div>
+            <div class="divider"></div>
+            <div class="explain-box">
+                <strong>KS-статистика</strong> показывает максимальное расхождение эмпирических функций распределения.
+                Чем ближе к 0, тем похоже распределение. <strong>p-value < 0.05</strong> означает статистически значимое различие —
+                для синтетики с российскими праздниками это ожидаемо: в реальном немецком датасете нет 8 марта и 23 февраля.
+            </div>
+            <div class="explain-box mt-2">
+                <strong>Корреляция недельного профиля</strong> — ключевой показатель правдоподобности.
+                Если она высокая, генератор верно воспроизводит поведение покупателей: будни, пятницу и выходные.
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title mb-2">Источник реальных данных</div>
+            <div class="summary-row"><span>Файл</span><span>CashierData.csv</span></div>
+            <div class="summary-row"><span>Период</span><span>{{ stats.real_start }} – {{ stats.real_end }}</span></div>
+            <div class="summary-row"><span>Показатель</span><span>CutFlowers, дневная выручка</span></div>
+            <div class="summary-row"><span>Наблюдений</span><span>{{ stats.real_days }}</span></div>
+            <div class="small muted mt-2">Внешний открытый датасет розничного цветочного магазина (Германия). Используется только как референс распределения и недельной сезонности, а не для обучения модели.</div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-icon">⚖️</span>
+        <strong>Сравнение пока недоступно</strong>
+        <p>Нужны синтетические данные и импортированный реальный датасет.</p>
+        <div class="page-actions" style="justify-content:center;">
+            <a class="btn btn--outline" href="{% url 'analytics' %}">К бэктесту</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

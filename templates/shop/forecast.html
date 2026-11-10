@@ -52,7 +52,7 @@
         {{ chart|safe }}
     </div>
     <div class="forecast-summary">
-        <div class="kicker small" style="color:#b7dcca;">Сводка прогноза</div>
+        <div class="kicker small" style="color:#b02a63;">Сводка прогноза</div>
         <h3>{{ label }}</h3>
         <div class="summary-row"><span>Горизонт</span><span>{{ summary.horizon|default:run.horizon_days }} дней</span></div>
         <div class="summary-row"><span>Суммарный спрос</span><span>{{ total_forecast|floatformat:0 }} шт.</span></div>
@@ -64,7 +64,7 @@
         {% endif %}
         <div class="summary-row total"><span>Закупить</span><span>{{ total_purchase }} шт.</span></div>
         {% if summary.fallback_products %}
-        <div class="small mt-2" style="color:#ffd6df;">Fallback на регрессию: {{ summary.fallback_products }} тов.</div>
+        <div class="small mt-2" style="color:#b02a63;">Fallback на регрессию: {{ summary.fallback_products }} тов.</div>
         {% endif %}
     </div>
 </div>
@@ -79,7 +79,7 @@
                 <thead><tr><th>Дата</th><th>День</th><th class="num">Прогноз</th><th class="num">Интервал</th><th>Пик</th></tr></thead>
                 <tbody>
                 {% for row in forecast_rows %}
-                <tr {% if row.is_peak %}style="background:#fff8ec;"{% endif %}>
+                <tr {% if row.is_peak %}style="background:#fff4cc;"{% endif %}>
                     <td class="strong">{{ row.date|date:"d.m.Y" }}</td>
                     <td class="muted">{{ row.date|date:"l" }}</td>
                     <td class="num strong">{{ row.predicted_quantity|floatformat:1 }} шт.</td>

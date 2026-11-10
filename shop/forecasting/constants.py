@@ -99,7 +99,7 @@ CATEGORIES = [
         "name": "Букеты",
         "slug": "bouquets",
         "icon": "💐",
-        "accent": "#1f7a5c",
+        "accent": "#ec4899",
         "description": "Готовые авторские букеты на любой повод.",
     },
     {
@@ -113,14 +113,14 @@ CATEGORIES = [
         "name": "Горшечные",
         "slug": "potted",
         "icon": "🪴",
-        "accent": "#0d9488",
+        "accent": "#ff9f68",
         "description": "Орхидеи и горшечные растения для дома и офиса.",
     },
     {
         "name": "Декор",
         "slug": "decor",
         "icon": "🎀",
-        "accent": "#d4a373",
+        "accent": "#ffd166",
         "description": "Открытки, ленты, упаковка и сопутствующие товары.",
     },
 ]

@@ -102,7 +102,7 @@ class Category(models.Model):
     slug = models.SlugField("Слаг", max_length=100, unique=True, blank=True)
     description = models.TextField("Описание", blank=True)
     icon = models.CharField("Иконка", max_length=10, default="💐")
-    accent = models.CharField("Цвет акцента", max_length=20, default="#1f7a5c")
+    accent = models.CharField("Цвет акцента", max_length=20, default="#ec4899")
 
     class Meta:
         verbose_name = "Категория"

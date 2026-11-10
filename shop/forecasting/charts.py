@@ -6,13 +6,13 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
-EMERALD = "#1f7a5c"
-DARK_GREEN = "#0f3d2e"
-ROSE = "#e11d48"
-GOLD = "#d4a373"
-INK = "#26352b"
-MUTED = "#6b7c72"
-GRID = "#e6ece7"
+PINK = "#ec4899"
+BERRY = "#b02a63"
+ROSE = "#ff4d88"
+GOLD = "#f5b942"
+INK = "#5c2a44"
+MUTED = "#8a7180"
+GRID = "#f6e6ee"
 
 PLOT_CONFIG = {
     "displayModeBar": False,
@@ -67,9 +67,9 @@ def revenue_chart(frame: pd.DataFrame, title: str = "Выручка по дня�
             y=frame["revenue"],
             mode="lines",
             name="Выручка",
-            line={"color": EMERALD, "width": 2.4},
+            line={"color": PINK, "width": 2.4},
             fill="tozeroy",
-            fillcolor="rgba(31,122,92,0.10)",
+            fillcolor="rgba(236,72,153,0.12)",
             hovertemplate="%{x|%d.%m.%Y}<br>%{y:,.0f} ₽<extra></extra>",
         )
     )
@@ -115,7 +115,7 @@ def forecast_chart(
                 mode="lines",
                 line={"width": 0},
                 fill="tonexty",
-                fillcolor="rgba(225,29,72,0.12)",
+                fillcolor="rgba(255,77,136,0.14)",
                 name="80% интервал",
                 hoverinfo="skip",
             )
@@ -194,7 +194,7 @@ def weekly_comparison_chart(stats: dict) -> str:
     real = [stats["weekly_real"].get(str(i), stats["weekly_real"].get(i, 0)) for i in range(7)]
     figure = go.Figure(
         data=[
-            go.Bar(name="Синтетика (2 года)", x=days, y=synthetic, marker_color=EMERALD),
+            go.Bar(name="Синтетика (2 года)", x=days, y=synthetic, marker_color=PINK),
             go.Bar(name="Реальный датасет", x=days, y=real, marker_color=GOLD),
         ]
     )
@@ -223,7 +223,7 @@ def monthly_comparison_chart(stats: dict) -> str:
             y=synthetic,
             mode="lines+markers",
             name="Синтетика",
-            line={"color": EMERALD, "width": 2.4},
+            line={"color": PINK, "width": 2.4},
         )
     )
     figure.add_trace(
@@ -248,7 +248,7 @@ def metrics_comparison_chart(metrics: list[dict]) -> str:
     peak_values = [peak["mae"], peak["rmse"], peak["mape"]] if peak else [0, 0, 0]
     figure = go.Figure(
         data=[
-            go.Bar(name="Обычные дни", x=labels, y=normal_values, marker_color=EMERALD),
+            go.Bar(name="Обычные дни", x=labels, y=normal_values, marker_color=PINK),
             go.Bar(name="Пиковые дни", x=labels, y=peak_values, marker_color=ROSE),
         ]
     )
@@ -266,7 +266,7 @@ def top_products_chart(frame: pd.DataFrame, title: str = "Топ товаров 
             x=data["revenue"],
             y=data["product__name"],
             orientation="h",
-            marker_color=EMERALD,
+            marker_color=PINK,
             hovertemplate="%{y}<br>%{x:,.0f} ₽<extra></extra>",
         )
     )
@@ -283,7 +283,7 @@ def demand_error_histogram(frame: pd.DataFrame) -> str:
         go.Histogram(
             x=errors,
             nbinsx=40,
-            marker_color=EMERALD,
+            marker_color=PINK,
             opacity=0.8,
             hovertemplate="Ошибка: %{x:.1f}<br>Частота: %{y}<extra></extra>",
         )

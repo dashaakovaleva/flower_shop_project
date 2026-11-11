@@ -226,7 +226,6 @@ flower_shop_project/
 - [REST API](docs/API.md)
 - [Данные и генератор](docs/DATASET.md)
 - [Тест-сценарии](docs/TEST_SCENARIOS.md)
-- [Материалы для презентации](docs/PRESENTATION.md)
 
 ---
 
